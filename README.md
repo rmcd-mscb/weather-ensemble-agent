@@ -476,6 +476,28 @@ The agent has access to these tools:
 | **gem** | Global Environmental Multiscale | Environment Canada | 0.25° (~25 km) | 2x daily |
 | **icon** | Icosahedral Nonhydrostatic | DWD (Germany) | 0.1° (~11 km) | 4x daily |
 
+#### Geographic Coverage
+
+**All four models provide global coverage** - you can query weather forecasts for any location on Earth:
+
+- 🌎 **North America**: New York, Denver, Mexico City, Toronto
+- 🌍 **Europe**: London, Paris, Berlin, Rome
+- 🌏 **Asia**: Tokyo, Beijing, Mumbai, Singapore
+- 🌎 **South America**: São Paulo, Buenos Aires, Lima
+- 🌍 **Africa**: Cairo, Nairobi, Cape Town
+- 🌏 **Oceania**: Sydney, Melbourne, Auckland
+- ❄️ **Antarctica**: McMurdo Station, South Pole
+
+**Regional Performance Notes:**
+- **ECMWF** generally considered most accurate globally, widely regarded as the gold standard
+- **GFS** particularly strong over North America and oceans
+- **ICON** excellent coverage over Europe and adjacent regions
+- **GEM** strong performance over North America
+- **Forecast quality** may vary by region due to observational data density (more weather stations and satellite coverage improves model initialization)
+- **Model agreement** can indicate forecast confidence - when all models agree, confidence is typically higher regardless of region
+
+The ensemble approach (combining all four models) helps compensate for individual model biases and provides more robust forecasts worldwide.
+
 ## Examples
 
 ### Example Output
