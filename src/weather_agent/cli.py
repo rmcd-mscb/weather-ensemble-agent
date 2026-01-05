@@ -1,6 +1,7 @@
 # src/weather_agent/cli.py
 """Command-line interface for weather ensemble agent"""
 
+from getpass import getpass
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -10,6 +11,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from weather_agent.agent import WeatherEnsembleAgent
+from weather_agent.config import CONFIG_FILE, get_api_key, save_api_key
 from weather_agent.tools.geocoding import geocode_location
 from weather_agent.tools.weather_api import get_available_models
 
@@ -251,7 +253,73 @@ def ask(query: str):
     console.print("\n[bold green]✓ Done![/bold green]\n")
 
 
+def configure():
+    """
+    Configure Anthropic API key for the weather agent.
+
+    Saves the API key to ~/.config/weather-agent/config.env for future use.
+
+    Examples:
+        weather-agent configure
+    """
+    console.print(
+        Panel.fit(
+            "[bold cyan]Weather Agent Configuration[/bold cyan]\n\n"
+            "This will set up your Anthropic API key.\n"
+            "Get your API key at: https://console.anthropic.com/",
+            border_style="cyan",
+        )
+    )
+
+    # Check if key already exists
+    existing_key = get_api_key()
+    if existing_key:
+        console.print(f"\n[yellow]ℹ[/yellow] API key already configured in: {CONFIG_FILE}\n")
+        overwrite = input("Do you want to overwrite it? [y/N]: ").strip().lower() == "y"
+        if not overwrite:
+            console.print("[green]✓[/green] Keeping existing configuration\n")
+            return
+
+    # Prompt for API key (hide input)
+    console.print("\n[bold]Enter your Anthropic API key:[/bold]")
+    api_key = getpass("API Key (input hidden): ").strip()
+
+    if not api_key:
+        console.print("[red]✗[/red] No API key provided. Configuration cancelled.\n")
+        return
+
+    if not api_key.startswith("sk-ant-"):
+        console.print(
+            "[yellow]⚠[/yellow] Warning: API key doesn't start with 'sk-ant-'. "
+            "This may not be a valid Anthropic API key.\n"
+        )
+        confirm = input("Continue anyway? [y/N]: ").strip().lower() == "y"
+        if not confirm:
+            console.print("[yellow]✗[/yellow] Configuration cancelled.\n")
+            return
+
+    # Save the API key
+    try:
+        save_api_key(api_key)
+        console.print(
+            f"\n[green]✓[/green] API key saved to: {CONFIG_FILE}\n"
+            f"[green]✓[/green] Permissions set to 600 (owner read/write only)\n"
+        )
+        console.print(
+            Panel.fit(
+                "[bold green]Configuration complete![/bold green]\n\n"
+                "You can now use the weather agent commands:\n"
+                '  weather-agent forecast "Denver, CO"\n'
+                '  weather-agent ask "What\'s the weather in Seattle?"\n',
+                border_style="green",
+            )
+        )
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error saving configuration: {e}\n")
+
+
 # Register commands
+app.command(configure, name="configure")
 app.command(forecast, name="forecast")
 app.command(compare, name="compare")
 app.command(visualize, name="visualize")

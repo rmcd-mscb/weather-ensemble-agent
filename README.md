@@ -262,9 +262,24 @@ This project demonstrates how agentic AI can transform a complex data analysis t
 
 ### Quick Start
 
+#### Install from PyPI (Recommended for Users)
+
+```bash
+# Install the package
+pip install weather-ensemble-agent
+
+# Configure your API key (interactive setup)
+weather-agent configure
+
+# Try it out!
+weather-agent visualize "Denver, CO"
+```
+
+#### Install from Source (For Development)
+
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/rmcd-mscb/weather-ensemble-agent.git
 cd weather-ensemble-agent
 
 # Install with uv (recommended)
@@ -273,9 +288,16 @@ uv sync
 # Or with pip
 pip install -e .
 
-# Set up your API key
+# Set up your API key (choose one method)
+# Method 1: Use the configure command
+weather-agent configure
+
+# Method 2: Create .env file
 cp .env.example .env
 # Edit .env and add your ANTHROPIC_API_KEY
+
+# Method 3: Set environment variable
+export ANTHROPIC_API_KEY='your-key-here'
 
 # Try it out!
 weather-agent visualize "Denver, CO"
@@ -283,7 +305,44 @@ weather-agent visualize "Denver, CO"
 
 ## Usage
 
+### First Time Setup
+
+After installing, configure your Anthropic API key:
+
+```bash
+weather-agent configure
+```
+
+This will:
+1. Prompt you for your API key (get one at https://console.anthropic.com/)
+2. Save it securely to `~/.config/weather-agent/config.env`
+3. Set file permissions to 600 (owner read/write only)
+
+**Alternative configuration methods:**
+
+```bash
+# Environment variable (temporary)
+export ANTHROPIC_API_KEY='sk-ant-...'
+
+# Environment variable (persistent in ~/.bashrc or ~/.zshrc)
+echo 'export ANTHROPIC_API_KEY="sk-ant-..."' >> ~/.bashrc
+
+# Project .env file (for development)
+echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env
+```
+
+The API key is checked in this order:
+1. `ANTHROPIC_API_KEY` environment variable
+2. Config file at `~/.config/weather-agent/config.env`
+3. `.env` file in current directory (development)
+
 ### Command Line Interface
+
+#### Configure API Key
+```bash
+# Interactive configuration setup
+weather-agent configure
+```
 
 #### Get a Weather Forecast
 ```bash

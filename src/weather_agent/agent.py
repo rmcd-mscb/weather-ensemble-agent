@@ -14,12 +14,11 @@ accomplish the user's request.
 """
 
 import json
-import os
 from datetime import datetime
 
 from anthropic import Anthropic
-from dotenv import load_dotenv
 
+from weather_agent.config import get_api_key_or_raise
 from weather_agent.tools.geocoding import geocode_location
 from weather_agent.tools.statistics import (
     calculate_daily_temperature_range_statistics,
@@ -33,10 +32,6 @@ from weather_agent.tools.weather_api import (
     get_available_models,
 )
 from weather_agent.visualization.plotter import create_ensemble_uncertainty_plot
-
-# Load environment variables from .env file into os.environ
-# This allows us to access secrets like ANTHROPIC_API_KEY using os.getenv()
-load_dotenv()
 
 
 class WeatherEnsembleAgent:
@@ -57,14 +52,17 @@ class WeatherEnsembleAgent:
     def __init__(self):
         """Initialize the Weather Ensemble Agent.
 
-        Sets up the Anthropic client with the API key from environment variables,
+        Sets up the Anthropic client with the API key from configuration,
         initializes conversation history tracking, and defines available tools.
 
         Raises:
-            ValueError: If ANTHROPIC_API_KEY is not set in environment variables
+            ValueError: If ANTHROPIC_API_KEY is not configured
         """
-        # Initialize the Anthropic client with API key from .env file
-        self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        # Get API key from config (environment, config file, or raise error)
+        api_key = get_api_key_or_raise()
+
+        # Initialize the Anthropic client
+        self.client = Anthropic(api_key=api_key)
 
         # Track conversation history (for future use in multi-turn conversations)
         self.conversation_history = []
