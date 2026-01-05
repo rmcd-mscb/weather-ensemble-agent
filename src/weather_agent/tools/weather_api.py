@@ -16,6 +16,9 @@ The API is free for non-commercial use and doesn't require an API key,
 making it perfect for learning and experimentation.
 """
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import requests
 
 
@@ -134,7 +137,7 @@ def fetch_weather_forecast(
             # Using min() ensures we don't exceed the API limit
             "forecast_days": min(days, 16),
             # Auto-detect timezone based on coordinates
-            # This ensures timestamps are in the local time of the forecast location
+            # Uses location's timezone - ensures timestamps are in local time
             "timezone": "auto",
         }
 
@@ -158,6 +161,10 @@ def fetch_weather_forecast(
                 "longitude": data.get("longitude"),
                 # Timezone identifier (e.g., "America/Denver")
                 "timezone": data.get("timezone"),
+                # Short timezone abbreviation (e.g., "MST" or "MDT")
+                "timezone_abbreviation": data.get("timezone_abbreviation"),
+                # UTC offset in seconds (e.g., -25200 for MST which is UTC-7)
+                "utc_offset_seconds": data.get("utc_offset_seconds"),
                 # List of ISO 8601 timestamps for each forecast hour
                 # Example: ["2026-01-05T00:00", "2026-01-05T01:00", ...]
                 "times": data["hourly"]["time"],
@@ -170,6 +177,9 @@ def fetch_weather_forecast(
                 "wind_speed": data["hourly"]["wind_speed_10m"],
                 # Include model name for identification when comparing multiple models
                 "model": model,
+                # Current time in the forecast location's timezone
+                # Useful for determining which forecast hours are current vs future
+                "current_time": datetime.now(ZoneInfo(data.get("timezone", "UTC"))).isoformat(),
             }
 
         except requests.exceptions.RequestException as e:

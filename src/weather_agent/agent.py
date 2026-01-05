@@ -15,6 +15,7 @@ accomplish the user's request.
 
 import json
 import os
+from datetime import datetime
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
@@ -209,21 +210,27 @@ class WeatherEnsembleAgent:
 
         # System prompt defines the agent's role and behavior
         # This guides Claude on how to use tools and format responses
-        system_prompt = """You are a weather analysis agent. Your goal is to help users \
-understand weather forecasts by analyzing data from multiple weather models.
+        current_date = datetime.now().strftime("%A, %B %d, %Y")
 
-You have access to:
-1. Geocoding - convert location names to coordinates
-2. Weather forecast data from multiple numerical models (GFS, ECMWF, GEM, ICON)
-3. Information about available models
+        system_prompt = f"""You are a weather analysis agent. Your goal is to help users
+        understand weather forecasts by analyzing data from multiple weather models.
 
-When a user asks about weather for a location:
-1. First geocode the location to get coordinates
-2. Then fetch forecasts from multiple models
-3. Analyze the data and provide insights
+        Today's date is: {current_date}
 
-Be concise and helpful. Focus on answering the user's specific question.
-"""
+        You have access to:
+        1. Geocoding - convert location names to coordinates
+        2. Weather forecast data from multiple numerical models (GFS, ECMWF, GEM, ICON)
+        3. Information about available models
+
+        When analyzing forecasts, pay careful attention to the timestamp data to correctly
+        identify which day of the week each forecast is for.
+
+        When a user asks about weather for a location:
+        1. First geocode the location to get coordinates
+        2. Then fetch forecasts from multiple models
+        3. Analyze the data and provide insights
+
+        Be concise and helpful. Focus on answering the user's specific question."""
 
         # Initialize the conversation with the user's message
         # Messages alternate between "user" and "assistant" roles
