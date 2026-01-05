@@ -3,7 +3,7 @@
 An AI-powered weather forecast analysis tool that uses Claude (Anthropic) to analyze ensemble forecasts from multiple numerical weather prediction models. The agent autonomously fetches data, performs statistical analysis, and creates beautiful visualizations to help you understand forecast uncertainty.
 
 [![PyPI version](https://badge.fury.io/py/weather-ensemble-agent.svg)](https://badge.fury.io/py/weather-ensemble-agent)
-[![Downloads](https://pepy.tech/badge/weather-ensemble-agent)](https://pepy.tech/project/weather-ensemble-agent)
+[![Downloads](https://img.shields.io/pypi/dm/weather-ensemble-agent)](https://pypi.org/project/weather-ensemble-agent/)
 ![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
