@@ -20,6 +20,7 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 
 from weather_agent.tools.geocoding import geocode_location
+from weather_agent.tools.weather_api import fetch_weather_forecast, get_available_models
 
 # Load environment variables from .env file into os.environ
 # This allows us to access secrets like ANTHROPIC_API_KEY using os.getenv()
@@ -93,7 +94,48 @@ class WeatherEnsembleAgent:
                     },
                     "required": ["location"],
                 },
-            }
+            },
+            {
+                "name": "fetch_weather_forecast",
+                "description": (
+                    "Fetch weather forecast data from numerical weather models. "
+                    "Returns hourly temperature (F), precipitation (inches), and "
+                    "wind speed (mph) for the specified number of days."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "latitude": {
+                            "type": "number",
+                            "description": "Latitude coordinate",
+                        },
+                        "longitude": {
+                            "type": "number",
+                            "description": "Longitude coordinate",
+                        },
+                        "days": {
+                            "type": "integer",
+                            "description": "Number of forecast days (1-16)",
+                            "default": 7,
+                        },
+                        "models": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": (
+                                "List of weather models to query. "
+                                "Options: 'gfs', 'ecmwf', 'gem', 'icon'. "
+                                "If not specified, defaults to ['gfs']"
+                            ),
+                        },
+                    },
+                    "required": ["latitude", "longitude"],
+                },
+            },
+            {
+                "name": "get_available_models",
+                "description": "Get list of available weather models that can be queried.",
+                "input_schema": {"type": "object", "properties": {}},
+            },
         ]
 
     def _execute_tool(self, tool_name: str, tool_input: dict):
@@ -122,6 +164,10 @@ class WeatherEnsembleAgent:
         if tool_name == "geocode_location":
             # Unpack the input dict as keyword arguments using **
             return geocode_location(**tool_input)
+        elif tool_name == "fetch_weather_forecast":
+            return fetch_weather_forecast(**tool_input)
+        elif tool_name == "get_available_models":
+            return get_available_models()
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
 
@@ -166,8 +212,17 @@ class WeatherEnsembleAgent:
         system_prompt = """You are a weather analysis agent. Your goal is to help users
 understand weather forecasts by analyzing data from multiple weather models.
 
-For now, you have access to geocoding. When given a location, convert it to coordinates.
-Be concise and helpful."""
+You have access to:
+1. Geocoding - convert location names to coordinates
+2. Weather forecast data from multiple numerical models (GFS, ECMWF, GEM, ICON)
+3. Information about available models
+
+When a user asks about weather for a location:
+1. First geocode the location to get coordinates
+2. Then fetch forecasts from multiple models
+3. Analyze the data and provide insights
+
+Be concise and helpful. Focus on answering the user's specific question."""
 
         # Initialize the conversation with the user's message
         # Messages alternate between "user" and "assistant" roles
@@ -228,7 +283,17 @@ Be concise and helpful."""
                         try:
                             # Execute the tool function
                             result = self._execute_tool(block.name, block.input)
-                            print(f"Result: {json.dumps(result, indent=2)}")
+
+                            # Truncate large results for display
+                            if isinstance(result, dict) and any(
+                                isinstance(v, list) and len(v) > 10
+                                for v in result.values()
+                                if isinstance(v, dict)
+                                for v in v.values()
+                            ):
+                                print(f"Result: [Large dataset - {len(str(result))} chars]")
+                            else:
+                                print(f"Result: {json.dumps(result, indent=2)[:500]}...")
 
                             # Format result as a tool_result message to send back to Claude
                             # tool_use_id links this result to Claude's original request
@@ -279,8 +344,11 @@ def main():
     # Create an agent instance
     agent = WeatherEnsembleAgent()
 
-    # Run a sample query
-    agent.run("What are the coordinates for Denver, Colorado?")
+    # Test multi-model forecast
+    agent.run(
+        "What's the weather forecast for Denver, Colorado for the next 7 days? "
+        "Check multiple weather models."
+    )
 
 
 if __name__ == "__main__":
