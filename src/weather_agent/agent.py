@@ -22,11 +22,16 @@ from dotenv import load_dotenv
 
 from weather_agent.tools.geocoding import geocode_location
 from weather_agent.tools.statistics import (
+    calculate_daily_temperature_range_statistics,
     calculate_ensemble_statistics,
     calculate_model_agreement,
     summarize_forecast_uncertainty,
 )
-from weather_agent.tools.weather_api import fetch_weather_forecast, get_available_models
+from weather_agent.tools.weather_api import (
+    fetch_daily_weather_forecast,
+    fetch_weather_forecast,
+    get_available_models,
+)
 
 # Load environment variables from .env file into os.environ
 # This allows us to access secrets like ANTHROPIC_API_KEY using os.getenv()
@@ -223,6 +228,56 @@ class WeatherEnsembleAgent:
                     "required": ["forecast_data"],
                 },
             },
+            {
+                "name": "fetch_daily_weather_forecast",
+                "description": (
+                    "Fetch DAILY weather forecast summaries (daily min/max/mean) instead of "
+                    "hourly data. Use this for multi-day forecasts when hourly detail isn't "
+                    "needed. Much more efficient than hourly data."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "latitude": {"type": "number", "description": "Latitude coordinate"},
+                        "longitude": {"type": "number", "description": "Longitude coordinate"},
+                        "days": {
+                            "type": "integer",
+                            "description": "Number of forecast days (1-16)",
+                            "default": 7,
+                        },
+                        "models": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": (
+                                "List of weather models to query. "
+                                "Options: 'gfs', 'ecmwf', 'gem', 'icon'"
+                            ),
+                        },
+                    },
+                    "required": ["latitude", "longitude"],
+                },
+            },
+            {
+                "name": "calculate_daily_temperature_range_statistics",
+                "description": (
+                    "For daily forecasts, calculate ensemble statistics for BOTH "
+                    "temperature_max and temperature_min. This gives complete temperature "
+                    "uncertainty analysis including daily highs and lows."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "forecast_data": {
+                            "type": "object",
+                            "description": (
+                                "The forecast data dictionary returned by "
+                                "fetch_daily_weather_forecast"
+                            ),
+                        }
+                    },
+                    "required": ["forecast_data"],
+                },
+            },
         ]
 
     def _execute_tool(self, tool_name: str, tool_input: dict):
@@ -261,6 +316,10 @@ class WeatherEnsembleAgent:
             return calculate_model_agreement(**tool_input)
         elif tool_name == "summarize_forecast_uncertainty":
             return summarize_forecast_uncertainty(**tool_input)
+        elif tool_name == "fetch_daily_weather_forecast":
+            return fetch_daily_weather_forecast(**tool_input)
+        elif tool_name == "calculate_daily_temperature_range_statistics":
+            return calculate_daily_temperature_range_statistics(**tool_input)
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
 
@@ -304,25 +363,32 @@ class WeatherEnsembleAgent:
         # This guides Claude on how to use tools and format responses
         current_date = datetime.now().strftime("%A, %B %d, %Y")
 
-        system_prompt = f"""You are a weather analysis agent. Your goal is to help users \
+        system_prompt = f"""You are a weather analysis agent. Your goal is to help users
 understand weather forecasts by analyzing data from multiple weather models.
 
-IMPORTANT: Today's date is {current_date}. When you receive forecast data with timestamps \
-like "2026-01-05T00:00", convert those dates to the correct day of the week.
+IMPORTANT: Today's date is {current_date}. When you receive forecast data with
+timestamps like "2026-01-05T00:00", convert those dates to the correct day.
 
 You have access to:
 1. Geocoding - convert location names to coordinates
-2. Weather forecast data from multiple numerical models (GFS, ECMWF, GEM, ICON)
-3. Statistical analysis tools to calculate ensemble statistics, model agreement, and uncertainty
+2. Weather forecast data:
+   - fetch_daily_weather_forecast: Use for 7-day outlooks (daily summaries)
+   - fetch_weather_forecast: Use only when hourly detail is specifically needed
+3. Statistical analysis tools to calculate ensemble statistics, model agreement,
+   and uncertainty
 4. Information about available models
 
-When a user asks about weather forecast or uncertainty:
-1. Geocode the location to get coordinates
-2. Fetch forecasts from multiple models
-3. Use statistical tools to analyze ensemble spread and model agreement
-4. Provide insights about forecast confidence based on the statistics
+CRITICAL: For multi-day forecasts, use fetch_daily_weather_forecast to avoid
+overwhelming data. After fetching forecast data, ALWAYS use the statistical
+analysis tools rather than manually analyzing arrays of numbers.
 
-Be concise and helpful. Focus on answering the user's specific question."""
+When a user asks about weather forecast or uncertainty:
+1. Geocode the location
+2. Fetch DAILY forecasts from multiple models (unless hourly detail requested)
+3. Use statistical tools to analyze the data
+4. Provide insights about forecast confidence
+
+Be concise and helpful."""
 
         # Initialize the conversation with the user's message
         # Messages alternate between "user" and "assistant" roles
@@ -342,7 +408,7 @@ Be concise and helpful. Focus on answering the user's specific question."""
             # - tools: Available tools Claude can choose to call
             response = self.client.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=4000,
+                max_tokens=8000,
                 system=system_prompt,
                 messages=messages,
                 tools=self.tools,

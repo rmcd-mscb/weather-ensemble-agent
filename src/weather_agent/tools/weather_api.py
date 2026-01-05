@@ -232,3 +232,76 @@ def get_available_models() -> list[str]:
     # Return a static list of supported model identifiers
     # These must match the keys in fetch_weather_forecast's model_endpoints dict
     return ["gfs", "ecmwf", "gem", "icon"]
+
+
+# Add this new function to src/weather_agent/tools/weather_api.py
+
+
+def fetch_daily_weather_forecast(
+    latitude: float, longitude: float, days: int = 7, models: list[str] = None
+) -> dict:
+    """
+    Fetch daily weather forecast summary from Open-Meteo API.
+    Returns daily min/max/mean instead of hourly values - more compact for analysis.
+
+    Args:
+        latitude: Latitude coordinate
+        longitude: Longitude coordinate
+        days: Number of forecast days (1-16)
+        models: List of models to fetch. Options: 'gfs', 'ecmwf', 'gem', 'icon'
+
+    Returns:
+        Dict containing daily forecast summaries
+    """
+    if models is None:
+        models = ["gfs"]
+
+    model_endpoints = {
+        "gfs": "https://api.open-meteo.com/v1/gfs",
+        "ecmwf": "https://api.open-meteo.com/v1/ecmwf",
+        "gem": "https://api.open-meteo.com/v1/gem",
+        "icon": "https://api.open-meteo.com/v1/dwd-icon",
+    }
+
+    results = {}
+
+    for model in models:
+        if model not in model_endpoints:
+            results[model] = {"error": f"Unknown model: {model}"}
+            continue
+
+        url = model_endpoints[model]
+        params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+            "temperature_unit": "fahrenheit",
+            "wind_speed_unit": "mph",
+            "precipitation_unit": "inch",
+            "forecast_days": min(days, 16),
+            "timezone": "auto",
+        }
+
+        try:
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            results[model] = {
+                "latitude": data.get("latitude"),
+                "longitude": data.get("longitude"),
+                "timezone": data.get("timezone"),
+                "dates": data["daily"]["time"],
+                "temperature_max": data["daily"]["temperature_2m_max"],
+                "temperature_min": data["daily"]["temperature_2m_min"],
+                "precipitation": data["daily"]["precipitation_sum"],
+                "wind_speed_max": data["daily"]["wind_speed_10m_max"],
+                "model": model,
+            }
+
+        except requests.exceptions.RequestException as e:
+            results[model] = {"error": f"API request failed: {str(e)}"}
+        except (KeyError, ValueError) as e:
+            results[model] = {"error": f"Failed to parse response: {str(e)}"}
+
+    return results
