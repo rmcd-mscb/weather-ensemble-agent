@@ -648,13 +648,67 @@ Error: No valid model data available
 ```
 Solution: Check your internet connection. The Open-Meteo API may be temporarily unavailable.
 
+## TODO / Future Enhancements
+
+The following features and improvements are planned but not yet implemented:
+
+### Testing
+- [ ] **Unit tests** for all tools (geocoding, weather API, statistics)
+- [ ] **Integration tests** for the agent's agentic loop
+- [ ] **Mock API responses** to avoid hitting real APIs during testing
+- [ ] **Test fixtures** with sample weather data
+- [ ] **CI/CD pipeline** with GitHub Actions or similar
+- [ ] **Test coverage reporting** (aim for >80% coverage)
+
+### Features
+- [ ] **Caching layer** to reduce duplicate API calls and costs
+- [ ] **Historical weather data** comparison and analysis
+- [ ] **Weather alerts** integration (severe weather warnings)
+- [ ] **Air quality data** from additional APIs
+- [ ] **Multi-location comparison** in a single visualization
+- [ ] **Export formats** (CSV, JSON) for forecast data
+- [ ] **Configuration file** support (YAML/TOML) for user preferences
+
+### User Experience
+- [ ] **Web interface** using Flask, FastAPI, or Streamlit
+- [ ] **Interactive visualizations** with Plotly or Bokeh
+- [ ] **Streaming responses** for real-time feedback during long operations
+- [ ] **Progress indicators** with detailed status updates
+- [ ] **Error recovery** with retry logic and better error messages
+- [ ] **Conversation history** for multi-turn interactions
+
+### Documentation
+- [ ] **Video tutorial** demonstrating the tool
+- [ ] **API reference** documentation (Sphinx or MkDocs)
+- [ ] **Architecture diagrams** showing component interactions
+- [ ] **Contributing guide** with setup instructions for developers
+- [ ] **Example notebooks** (Jupyter) with analysis workflows
+
+### Advanced Features
+- [ ] **Multiple LLM providers** (OpenAI, local models like Llama)
+- [ ] **Multi-agent collaboration** (separate agents for different tasks)
+- [ ] **RAG integration** with weather documentation/research papers
+- [ ] **Fine-tuned models** for weather-specific tasks
+- [ ] **Custom ensemble weighting** based on historical model performance
+- [ ] **Probabilistic forecasts** with uncertainty quantification
+- [ ] **Seasonal forecasting** for long-range predictions
+
+### Performance & Reliability
+- [ ] **Async API calls** for parallel data fetching
+- [ ] **Rate limiting** to respect API quotas
+- [ ] **Database storage** for forecast history and analysis
+- [ ] **Monitoring/logging** infrastructure
+- [ ] **Error tracking** with Sentry or similar
+
+**Contributions welcome!** If you'd like to implement any of these features, please open an issue to discuss your approach first.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ### Guidelines
 - Follow the existing code style (ruff format)
-- Add tests for new features
+- Add tests for new features (see TODO section above - tests are currently missing!)
 - Update documentation as needed
 - Ensure pre-commit hooks pass
 
