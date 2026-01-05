@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-01-05
+
+### Added
+
+#### Configuration Management
+- **`weather-agent configure` command** for interactive API key setup
+- **User-friendly configuration system** with multiple API key sources:
+  - Environment variable (`ANTHROPIC_API_KEY`)
+  - User config file (`~/.config/weather-agent/config.env`)
+  - Project `.env` file (for development)
+- **Secure API key storage** with automatic 600 permissions
+- **API key validation** with format checking (warns if invalid)
+- **Configuration module** (`src/weather_agent/config.py`) for centralized key management
+
+#### Documentation
+- **CHANGELOG.md** following Keep a Changelog format
+- **CONTRIBUTING.md** with comprehensive development and release workflows:
+  - 9-step release process with hatch version management
+  - Automated release script example
+  - Commit message conventions
+  - Code style guidelines
+- **Geographic coverage section** in README clarifying global model availability
+- **Operational costs section** with:
+  - Detailed token usage breakdown per query type
+  - Cost estimates table ($0.03-$0.15 per query)
+  - 5 concrete cost optimization tips
+  - Budget monitoring guidance
+- **TODO section** with 40+ planned enhancements across 6 categories
+- **PyPI installation workflow** in README for pip users
+- **PyPI badges** for version and download tracking
+
+#### Development Tools
+- **hatch version management** for automated version bumping
+  - Single-source version in `src/weather_agent/__init__.py`
+  - Commands: `hatch version patch/minor/major`
+  - Syncs version across `pyproject.toml` and `__init__.py`
+- **Changelog URL** in `project.urls` for PyPI sidebar
+- **CHANGELOG.md inclusion** in source distributions
+
+### Changed
+- **Agent initialization** now uses centralized config system with helpful error messages
+- **README structure** reorganized for better PyPI user onboarding:
+  - PyPI installation as primary method
+  - `weather-agent configure` as recommended setup
+  - Development installation as separate section
+- **Complete project metadata** in `pyproject.toml`:
+  - Author information and contact details
+  - 10 keywords for discoverability
+  - PyPI classifiers for proper categorization
+  - Project URLs (homepage, repository, issues, documentation, changelog)
+
+### Fixed
+- **pyproject.toml structure** corrected (dependencies before project.urls)
+- **Build system** now successfully builds distributions with `uv build`
+
 ## [0.1.0] - 2026-01-05
 
 ### Added
@@ -144,4 +199,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Author**: Richard McDonald
 - **License**: MIT
 
+[0.1.1]: https://github.com/rmcd-mscb/weather-ensemble-agent/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/rmcd-mscb/weather-ensemble-agent/releases/tag/v0.1.0

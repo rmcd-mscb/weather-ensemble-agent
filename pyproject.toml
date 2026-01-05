@@ -1,6 +1,6 @@
 [project]
 name = "weather-ensemble-agent"
-version = "0.1.0"
+dynamic = ["version"]
 description = "AI agent for ensemble weather forecast analysis using Claude and multiple weather models"
 readme = "README.md"
 requires-python = ">=3.12"
