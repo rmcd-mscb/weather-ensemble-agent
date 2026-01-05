@@ -32,12 +32,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-[project.urls]
-Homepage = "https://github.com/rmcd-mscb/weather-ensemble-agent"
-Repository = "https://github.com/rmcd-mscb/weather-ensemble-agent"
-Issues = "https://github.com/rmcd-mscb/weather-ensemble-agent/issues"
-Documentation = "https://github.com/rmcd-mscb/weather-ensemble-agent#readme"
-
 dependencies = [
     "anthropic>=0.75.0",
     "cyclopts>=4.4.4",
@@ -48,6 +42,12 @@ dependencies = [
     "requests>=2.32.5",
     "rich>=14.2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/rmcd-mscb/weather-ensemble-agent"
+Repository = "https://github.com/rmcd-mscb/weather-ensemble-agent"
+Issues = "https://github.com/rmcd-mscb/weather-ensemble-agent/issues"
+Documentation = "https://github.com/rmcd-mscb/weather-ensemble-agent#readme"
 
 [dependency-groups]
 dev = [
