@@ -209,7 +209,7 @@ class WeatherEnsembleAgent:
 
         # System prompt defines the agent's role and behavior
         # This guides Claude on how to use tools and format responses
-        system_prompt = """You are a weather analysis agent. Your goal is to help users
+        system_prompt = """You are a weather analysis agent. Your goal is to help users \
 understand weather forecasts by analyzing data from multiple weather models.
 
 You have access to:
@@ -222,7 +222,8 @@ When a user asks about weather for a location:
 2. Then fetch forecasts from multiple models
 3. Analyze the data and provide insights
 
-Be concise and helpful. Focus on answering the user's specific question."""
+Be concise and helpful. Focus on answering the user's specific question.
+"""
 
         # Initialize the conversation with the user's message
         # Messages alternate between "user" and "assistant" roles
