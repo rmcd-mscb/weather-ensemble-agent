@@ -32,6 +32,7 @@ from weather_agent.tools.weather_api import (
     fetch_weather_forecast,
     get_available_models,
 )
+from weather_agent.visualization.plotter import create_ensemble_uncertainty_plot
 
 # Load environment variables from .env file into os.environ
 # This allows us to access secrets like ANTHROPIC_API_KEY using os.getenv()
@@ -278,6 +279,40 @@ class WeatherEnsembleAgent:
                     "required": ["forecast_data"],
                 },
             },
+            {
+                "name": "create_ensemble_uncertainty_plot",
+                "description": (
+                    "Create a visualization showing ensemble forecast uncertainty. "
+                    "Generates a multi-panel plot with temperature, precipitation, and wind "
+                    "speed, showing individual model traces and uncertainty envelopes. "
+                    "Returns the path to the saved image."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "forecast_data": {
+                            "type": "object",
+                            "description": (
+                                "The forecast data dictionary returned by "
+                                "fetch_weather_forecast or fetch_daily_weather_forecast"
+                            ),
+                        },
+                        "output_path": {
+                            "type": "string",
+                            "description": (
+                                "Where to save the plot (e.g., 'outputs/denver_forecast.png')"
+                            ),
+                            "default": "forecast_uncertainty.png",
+                        },
+                        "title": {
+                            "type": "string",
+                            "description": "Title for the plot",
+                            "default": "Weather Forecast Ensemble Analysis",
+                        },
+                    },
+                    "required": ["forecast_data"],
+                },
+            },
         ]
 
     def _execute_tool(self, tool_name: str, tool_input: dict):
@@ -320,6 +355,8 @@ class WeatherEnsembleAgent:
             return fetch_daily_weather_forecast(**tool_input)
         elif tool_name == "calculate_daily_temperature_range_statistics":
             return calculate_daily_temperature_range_statistics(**tool_input)
+        elif tool_name == "create_ensemble_uncertainty_plot":
+            return create_ensemble_uncertainty_plot(**tool_input)
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
 
@@ -509,11 +546,10 @@ def main():
     # Create an agent instance
     agent = WeatherEnsembleAgent()
 
-    # Test with uncertainty analysis
+    # Test with visualization
     agent.run(
-        "What's the weather forecast for Denver, Colorado for the next 7 days? "
-        "How confident are the models? Check multiple models and analyze the "
-        "forecast uncertainty."
+        "Create a 7-day weather forecast visualization for Denver, Colorado. "
+        "Include multiple models and show the uncertainty. Save it as outputs/denver_forecast.png"
     )
 
 

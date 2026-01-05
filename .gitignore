@@ -24,9 +24,8 @@ uv.lock
 *.swo
 
 # Output
-outputs/
-*.png
-*.pdf
+outputs/*.png
+!outputs/.gitkeep
 
 # Jupyter
 .ipynb_checkpoints/
