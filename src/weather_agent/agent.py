@@ -21,6 +21,11 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 
 from weather_agent.tools.geocoding import geocode_location
+from weather_agent.tools.statistics import (
+    calculate_ensemble_statistics,
+    calculate_model_agreement,
+    summarize_forecast_uncertainty,
+)
 from weather_agent.tools.weather_api import fetch_weather_forecast, get_available_models
 
 # Load environment variables from .env file into os.environ
@@ -101,7 +106,8 @@ class WeatherEnsembleAgent:
                 "description": (
                     "Fetch weather forecast data from numerical weather models. "
                     "Returns hourly temperature (F), precipitation (inches), and "
-                    "wind speed (mph) for the specified number of days."
+                    "wind speed (mph) for the specified number of days. "
+                    "All timestamps are in the location's local timezone."
                 ),
                 "input_schema": {
                     "type": "object",
@@ -137,6 +143,86 @@ class WeatherEnsembleAgent:
                 "description": "Get list of available weather models that can be queried.",
                 "input_schema": {"type": "object", "properties": {}},
             },
+            {
+                "name": "calculate_ensemble_statistics",
+                "description": (
+                    "Calculate ensemble statistics (mean, median, std dev, percentiles, "
+                    "spread) for a weather variable across multiple models. "
+                    "Use this to quantify forecast uncertainty."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "forecast_data": {
+                            "type": "object",
+                            "description": (
+                                "The forecast data dictionary returned by fetch_weather_forecast"
+                            ),
+                        },
+                        "variable": {
+                            "type": "string",
+                            "enum": ["temperature", "precipitation", "wind_speed"],
+                            "description": "Which variable to analyze",
+                            "default": "temperature",
+                        },
+                    },
+                    "required": ["forecast_data"],
+                },
+            },
+            {
+                "name": "calculate_model_agreement",
+                "description": (
+                    "Calculate how much different models agree with each other for a "
+                    "given variable. Returns agreement scores and identifies periods of "
+                    "high/low agreement."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "forecast_data": {
+                            "type": "object",
+                            "description": (
+                                "The forecast data dictionary returned by fetch_weather_forecast"
+                            ),
+                        },
+                        "variable": {
+                            "type": "string",
+                            "enum": ["temperature", "precipitation", "wind_speed"],
+                            "description": "Which variable to analyze",
+                            "default": "temperature",
+                        },
+                        "threshold": {
+                            "type": "number",
+                            "description": (
+                                "Agreement threshold - models agree if within this value "
+                                "(default: 5.0 for temp, auto-adjusted for other variables)"
+                            ),
+                            "default": 5.0,
+                        },
+                    },
+                    "required": ["forecast_data"],
+                },
+            },
+            {
+                "name": "summarize_forecast_uncertainty",
+                "description": (
+                    "Provide a high-level summary of forecast uncertainty across all variables "
+                    "(temperature, precipitation, wind). Good for getting an overall sense of "
+                    "forecast confidence."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "forecast_data": {
+                            "type": "object",
+                            "description": (
+                                "The forecast data dictionary returned by fetch_weather_forecast"
+                            ),
+                        }
+                    },
+                    "required": ["forecast_data"],
+                },
+            },
         ]
 
     def _execute_tool(self, tool_name: str, tool_input: dict):
@@ -169,6 +255,12 @@ class WeatherEnsembleAgent:
             return fetch_weather_forecast(**tool_input)
         elif tool_name == "get_available_models":
             return get_available_models()
+        elif tool_name == "calculate_ensemble_statistics":
+            return calculate_ensemble_statistics(**tool_input)
+        elif tool_name == "calculate_model_agreement":
+            return calculate_model_agreement(**tool_input)
+        elif tool_name == "summarize_forecast_uncertainty":
+            return summarize_forecast_uncertainty(**tool_input)
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
 
@@ -212,25 +304,25 @@ class WeatherEnsembleAgent:
         # This guides Claude on how to use tools and format responses
         current_date = datetime.now().strftime("%A, %B %d, %Y")
 
-        system_prompt = f"""You are a weather analysis agent. Your goal is to help users
-        understand weather forecasts by analyzing data from multiple weather models.
+        system_prompt = f"""You are a weather analysis agent. Your goal is to help users \
+understand weather forecasts by analyzing data from multiple weather models.
 
-        Today's date is: {current_date}
+IMPORTANT: Today's date is {current_date}. When you receive forecast data with timestamps \
+like "2026-01-05T00:00", convert those dates to the correct day of the week.
 
-        You have access to:
-        1. Geocoding - convert location names to coordinates
-        2. Weather forecast data from multiple numerical models (GFS, ECMWF, GEM, ICON)
-        3. Information about available models
+You have access to:
+1. Geocoding - convert location names to coordinates
+2. Weather forecast data from multiple numerical models (GFS, ECMWF, GEM, ICON)
+3. Statistical analysis tools to calculate ensemble statistics, model agreement, and uncertainty
+4. Information about available models
 
-        When analyzing forecasts, pay careful attention to the timestamp data to correctly
-        identify which day of the week each forecast is for.
+When a user asks about weather forecast or uncertainty:
+1. Geocode the location to get coordinates
+2. Fetch forecasts from multiple models
+3. Use statistical tools to analyze ensemble spread and model agreement
+4. Provide insights about forecast confidence based on the statistics
 
-        When a user asks about weather for a location:
-        1. First geocode the location to get coordinates
-        2. Then fetch forecasts from multiple models
-        3. Analyze the data and provide insights
-
-        Be concise and helpful. Focus on answering the user's specific question."""
+Be concise and helpful. Focus on answering the user's specific question."""
 
         # Initialize the conversation with the user's message
         # Messages alternate between "user" and "assistant" roles
@@ -286,22 +378,18 @@ class WeatherEnsembleAgent:
                     if block.type == "tool_use":
                         # Log the tool call for debugging
                         print(f"\nTool call: {block.name}")
-                        print(f"Input: {json.dumps(block.input, indent=2)}")
+                        print(f"Input keys: {list(block.input.keys())}")
 
                         try:
                             # Execute the tool function
                             result = self._execute_tool(block.name, block.input)
 
                             # Truncate large results for display
-                            if isinstance(result, dict) and any(
-                                isinstance(v, list) and len(v) > 10
-                                for v in result.values()
-                                if isinstance(v, dict)
-                                for v in v.values()
-                            ):
-                                print(f"Result: [Large dataset - {len(str(result))} chars]")
+                            result_str = json.dumps(result, indent=2)
+                            if len(result_str) > 1000:
+                                print(f"Result: [Large dataset - {len(result_str)} chars]")
                             else:
-                                print(f"Result: {json.dumps(result, indent=2)[:500]}...")
+                                print(f"Result: {result_str}")
 
                             # Format result as a tool_result message to send back to Claude
                             # tool_use_id links this result to Claude's original request
@@ -316,6 +404,9 @@ class WeatherEnsembleAgent:
                             # If tool execution fails, send error back to Claude
                             # Claude can often handle errors gracefully and explain them to the user
                             print(f"Tool error: {str(e)}")
+                            import traceback
+
+                            traceback.print_exc()
                             tool_results.append(
                                 {
                                     "type": "tool_result",
@@ -352,10 +443,11 @@ def main():
     # Create an agent instance
     agent = WeatherEnsembleAgent()
 
-    # Test multi-model forecast
+    # Test with uncertainty analysis
     agent.run(
         "What's the weather forecast for Denver, Colorado for the next 7 days? "
-        "Check multiple weather models."
+        "How confident are the models? Check multiple models and analyze the "
+        "forecast uncertainty."
     )
 
 
