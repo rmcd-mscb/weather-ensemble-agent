@@ -1,0 +1,731 @@
+# Weather Ensemble Agent 🌤️
+
+An AI-powered weather forecast analysis tool that uses Claude (Anthropic) to analyze ensemble forecasts from multiple numerical weather prediction models. The agent autonomously fetches data, performs statistical analysis, and creates beautiful visualizations to help you understand forecast uncertainty.
+
+![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+## 📚 Learning Project
+
+**This project is designed as a learning resource for developers interested in AI agents.**
+
+If you're wondering "What are AI agents and how can I use them in my coding?", this repository provides a complete, real-world example that you can study, run, and extend.
+
+### What You'll Learn
+
+By exploring this codebase, you'll understand:
+
+1. **🤖 What AI Agents Are**
+   - Autonomous systems that reason about which actions to take
+   - Different from traditional chatbots that just respond to input
+   - Use tool calling (function calling) to interact with the real world
+   - Implement an "agentic loop" pattern for iterative problem-solving
+
+2. **🔧 How to Build AI Agents**
+   - Structuring your code for tool calling with Claude (or other LLMs)
+   - Designing tool schemas using JSON Schema
+   - Implementing the agentic loop pattern
+   - Handling tool execution and error cases
+   - Chaining multiple tool calls together
+
+3. **⚙️ Practical Patterns You Can Reuse**
+   - Project structure for agent-based applications
+   - Integration with external APIs (weather, geocoding)
+   - Data analysis and visualization within an agent
+   - Building a CLI around an AI agent
+   - Environment configuration and API key management
+
+4. **🎯 When to Use AI Agents in Your Projects**
+   - Scenarios where agents excel vs traditional code
+   - Cost-benefit analysis of agentic approaches
+   - Combining deterministic code with AI reasoning
+   - Best practices for production deployments
+
+### How to Use This for Learning
+
+1. **Start with the README** - Understand the "Why Agentic AI?" section below
+2. **Run the examples** - See the agent in action with different queries
+3. **Read the code** - Study `src/weather_agent/agent.py` to see the agentic loop
+4. **Trace execution** - Watch the console output showing each tool call
+5. **Modify tools** - Add your own tool to see how easy it is to extend
+6. **Build your own** - Use this as a template for your own agent project
+
+### Perfect For
+
+- 🎓 Developers learning about AI agents and LLM applications
+- 🛠️ Engineers wanting practical examples of tool calling/function calling
+- 🔬 Anyone curious about the difference between traditional programming and agentic AI
+- 📊 Data scientists interested in combining AI with data analysis workflows
+
+**This project demonstrates production-quality patterns while remaining simple enough to understand and modify.**
+
+## Features
+
+### 🤖 AI Agent with Tool Calling
+- **Autonomous reasoning**: Claude decides which tools to use and when
+- **Agentic loop pattern**: Continues gathering information until the user's question is fully answered
+- **Natural language interface**: Ask questions in plain English
+
+### 📊 Multi-Model Ensemble Analysis
+- **4 Weather Models**: GFS, ECMWF, GEM, and ICON
+- **Statistical analysis**: Mean, median, standard deviation, percentiles, and spread
+- **Model agreement metrics**: Quantify forecast confidence across models
+- **Uncertainty categorization**: Low, moderate, or high uncertainty levels
+
+### 📈 Visualization
+- **Multi-panel plots**: Temperature (max/min), precipitation, and wind speed
+- **Ensemble traces**: See individual model predictions
+- **Uncertainty envelopes**: Visualize forecast spread
+- **Publication-quality output**: Save as PNG with customizable paths
+
+### 🖥️ Comprehensive CLI
+- **forecast**: Get weather with optional visualization
+- **compare**: Analyze model agreement for specific variables
+- **visualize**: Create plots for any location
+- **models**: List available weather models
+- **coordinates**: Geocode location names
+- **ask**: Free-form questions to the agent
+
+### 🌍 Data Sources
+- **Open-Meteo API**: Free, no API key required for weather data
+- **Nominatim (OpenStreetMap)**: Free geocoding service
+- **Anthropic Claude**: Sonnet 4 for AI reasoning (requires API key)
+
+## Why Agentic AI? 🧠
+
+### The Paradigm Shift from Traditional Programming
+
+This project demonstrates a fundamental shift in how we build software—from **imperative programming** to **agentic AI**.
+
+#### Traditional Pre-AI Approach ⚙️
+
+In traditional programming, you would build this weather analysis tool by:
+
+1. **Hard-coded logic**: Writing explicit if/else statements for every scenario
+   ```python
+   if user_wants_forecast:
+       location = geocode(user_input)
+       if user_wants_visualization:
+           data = fetch_data(location)
+           stats = calculate_stats(data)
+           create_plot(stats)
+       else:
+           data = fetch_data(location)
+           print_forecast(data)
+   ```
+
+2. **Fixed workflows**: Predetermined sequences that can't adapt
+3. **Brittle parsing**: Complex regex or NLP to understand user intent
+4. **Limited flexibility**: Each new feature requires new code paths
+5. **Manual orchestration**: Developer decides the exact order of operations
+
+**Problems with this approach:**
+- Can't handle unexpected user requests
+- Requires anticipating every possible scenario
+- Difficult to maintain as features grow
+- Poor user experience for complex queries
+
+#### Agentic AI Approach 🤖
+
+With agentic AI, the system **reasons** about what to do:
+
+1. **Autonomous decision-making**: The AI agent decides which tools to use
+   ```python
+   # User asks: "Compare Denver and Seattle weather, which is better for skiing?"
+   # Agent autonomously:
+   # - Geocodes both locations
+   # - Fetches forecasts for both
+   # - Compares temperature and precipitation
+   # - Reasons about skiing conditions
+   # - Provides a nuanced answer
+   ```
+
+2. **Dynamic workflows**: Adapts to each unique request
+3. **Natural language**: Users ask questions in plain English
+4. **Self-extending**: New tools are automatically available to the agent
+5. **Contextual reasoning**: Makes intelligent decisions based on the situation
+
+**Advantages of this approach:**
+- ✅ Handles unforeseen questions naturally
+- ✅ Combines tools in novel ways without explicit programming
+- ✅ Provides nuanced, context-aware responses
+- ✅ Gracefully degrades when information is missing
+- ✅ Explains its reasoning process
+
+### Real Example from This Project
+
+**User query**: *"What's the weather like in Miami this week? Should I pack an umbrella?"*
+
+**Traditional approach would require:**
+```python
+def handle_query(query):
+    # Parse intent (umbrella question = check precipitation)
+    if "umbrella" in query.lower():
+        location = extract_location(query)  # Complex regex
+        data = fetch_forecast(location, days=7)
+        precip = analyze_precipitation(data)
+        if precip > THRESHOLD:
+            return "Yes, bring umbrella"
+        else:
+            return "No umbrella needed"
+```
+
+**Agentic approach:**
+1. Agent sees the query and reasons: "I need to check precipitation in Miami"
+2. Calls `geocode_location("Miami")` → gets coordinates
+3. Calls `fetch_daily_weather_forecast(...)` → gets 7-day data
+4. Calls `calculate_ensemble_statistics(forecast, "precipitation")` → analyzes uncertainty
+5. Synthesizes answer: "Expect 0.8 inches over the week, mostly on Tuesday and Wednesday. Pack an umbrella for mid-week, but you'll likely have sunny days too. Models show high agreement on this."
+
+The agent **autonomously chose** this sequence—you didn't program it explicitly!
+
+### The Agentic Loop Pattern
+
+This project implements what's called an **agentic loop**:
+
+```
+┌─────────────────────────────────────────────────┐
+│  1. User asks question                          │
+└────────────────┬────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────┐
+│  2. AI Agent reasons about what's needed        │
+│     - What information do I need?               │
+│     - Which tools should I use?                 │
+│     - In what order?                            │
+└────────────────┬────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────┐
+│  3. Execute tool(s)                             │
+│     - Fetch data                                │
+│     - Perform calculations                      │
+│     - Create visualizations                     │
+└────────────────┬────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────┐
+│  4. Agent evaluates results                     │
+│     - Do I have enough information?             │
+│     - Do I need more data?                      │
+│     - Should I use another tool?                │
+└────────────────┬────────────────────────────────┘
+                 │
+                 ├─── No: Loop back to step 2 ────┐
+                 │                                  │
+                 ▼                                  │
+┌─────────────────────────────────────────────────┐│
+│  5. Provide comprehensive answer                ││
+│     - Synthesize information                    ││
+│     - Explain findings                          ││
+│     - Answer the user's question                ││
+└─────────────────────────────────────────────────┘│
+                 ▲                                  │
+                 └──────────────────────────────────┘
+```
+
+### Key Benefits
+
+1. **Flexibility**: Handles queries you never anticipated
+2. **Intelligence**: Combines tools in creative ways
+3. **Adaptability**: Adjusts approach based on available data
+4. **Explainability**: Can explain why it made certain choices
+5. **Maintainability**: Add new tools without changing core logic
+
+### When to Use Agentic AI vs Traditional Code
+
+**Use Agentic AI when:**
+- 🎯 User intent is varied and unpredictable
+- 🔄 Workflows need to be dynamic
+- 🧩 Tasks require combining multiple operations
+- 💬 Natural language interface is important
+- 🎨 Creativity in problem-solving is valuable
+
+**Use Traditional Code when:**
+- ⚡ Performance is critical (milliseconds matter)
+- 💰 API costs must be minimized
+- 🔒 Deterministic behavior is required
+- 📏 Simple, well-defined tasks
+- 🔐 Security/compliance requires full control
+
+This project demonstrates how agentic AI can transform a complex data analysis task into an intuitive, conversational experience.
+
+## Installation
+
+### Prerequisites
+- Python 3.12 or higher
+- [uv](https://github.com/astral-sh/uv) package manager (recommended) or pip
+- Anthropic API key ([get one here](https://console.anthropic.com/))
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd weather-ensemble-agent
+
+# Install with uv (recommended)
+uv sync
+
+# Or with pip
+pip install -e .
+
+# Set up your API key
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY
+
+# Try it out!
+weather-agent visualize "Denver, CO"
+```
+
+## Usage
+
+### Command Line Interface
+
+#### Get a Weather Forecast
+```bash
+# Simple 7-day forecast with visualization
+weather-agent forecast "Seattle, WA"
+
+# 3-day hourly forecast without visualization
+weather-agent forecast "New York" --days 3 --hourly --visualize false
+
+# Specific models only
+weather-agent forecast "Boulder, CO" --models gfs --models ecmwf
+```
+
+#### Create Visualizations
+```bash
+# Default: 7-day daily forecast
+weather-agent visualize "Portland, OR"
+
+# Custom output path
+weather-agent visualize "Denver, CO" --output outputs/denver_forecast.png
+
+# Hourly data for 3 days
+weather-agent visualize "Miami, FL" --days 3 --hourly
+```
+
+#### Compare Models
+```bash
+# Temperature comparison
+weather-agent compare "Chicago, IL" --variable temperature
+
+# Precipitation analysis
+weather-agent compare "Seattle" --variable precipitation --days 10
+
+# Specific models
+weather-agent compare "Boston" --variable wind_speed --models gfs --models ecmwf
+```
+
+#### List Available Models
+```bash
+weather-agent models
+```
+
+#### Geocode Locations
+```bash
+weather-agent coordinates "San Francisco, CA"
+```
+
+#### Ask Free-Form Questions
+```bash
+weather-agent ask "What's the weather like in Miami this week?"
+weather-agent ask "Compare Denver and Boulder forecasts for skiing conditions"
+```
+
+### Python API
+
+#### Using the Agent Directly
+```python
+from weather_agent.agent import WeatherEnsembleAgent
+
+# Create agent instance
+agent = WeatherEnsembleAgent()
+
+# Run a query
+agent.run(
+    "What's the 7-day forecast for Denver? "
+    "How confident are the models? Include a visualization."
+)
+```
+
+#### Using Individual Tools
+```python
+from weather_agent.tools.geocoding import geocode_location
+from weather_agent.tools.weather_api import fetch_daily_weather_forecast
+from weather_agent.tools.statistics import calculate_ensemble_statistics
+from weather_agent.visualization.plotter import create_ensemble_uncertainty_plot
+
+# Geocode a location
+location = geocode_location("Denver, Colorado")
+# Returns: {'latitude': 39.7392, 'longitude': -104.9903, 'display_name': '...'}
+
+# Fetch weather data from multiple models
+forecast = fetch_daily_weather_forecast(
+    latitude=location['latitude'],
+    longitude=location['longitude'],
+    days=7,
+    models=['gfs', 'ecmwf', 'gem', 'icon']
+)
+
+# Calculate ensemble statistics
+stats = calculate_ensemble_statistics(forecast, variable="temperature", use_max=True)
+# Returns: {'ensemble_mean': [...], 'spread': [...], 'percentile_25': [...], ...}
+
+# Create visualization
+result = create_ensemble_uncertainty_plot(
+    forecast_data=forecast,
+    output_path="outputs/denver_forecast.png",
+    title="Denver 7-Day Forecast"
+)
+# Returns: {'output_path': '...', 'models_plotted': [...], 'num_timesteps': 7}
+```
+
+## Project Structure
+
+```
+weather-ensemble-agent/
+├── src/weather_agent/
+│   ├── __init__.py
+│   ├── __main__.py              # Python -m weather_agent support
+│   ├── agent.py                 # Main AI agent with agentic loop
+│   ├── cli.py                   # Command-line interface
+│   ├── tools/                   # Tools available to the agent
+│   │   ├── __init__.py
+│   │   ├── geocoding.py         # Location → coordinates
+│   │   ├── weather_api.py       # Fetch from Open-Meteo API
+│   │   └── statistics.py        # Ensemble analysis
+│   ├── utils/                   # Utility functions
+│   └── visualization/           # Plotting tools
+│       ├── __init__.py
+│       └── plotter.py           # Matplotlib visualization
+├── examples/                    # Example scripts
+│   └── test_visualization.py
+├── tests/                       # Unit tests
+├── outputs/                     # Default output directory
+├── pyproject.toml              # Project metadata and dependencies
+├── .env.example                # Example environment variables
+├── .pre-commit-config.yaml     # Code quality hooks
+└── README.md                   # This file
+```
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```bash
+# Required: Your Anthropic API key
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Pre-commit Hooks
+
+The project uses pre-commit hooks for code quality:
+
+```bash
+# Install hooks
+pre-commit install
+
+# Run manually
+pre-commit run --all-files
+```
+
+Hooks include:
+- **ruff**: Linting and formatting
+- **bandit**: Security analysis
+- **pyupgrade**: Python syntax modernization
+- Trailing whitespace, EOF fixer, etc.
+
+## How It Works
+
+### The Agentic Loop
+
+The Weather Ensemble Agent uses Claude's tool-calling capability to autonomously reason about which actions to take:
+
+1. **User Request**: You ask a question in natural language
+2. **Claude Reasoning**: The AI decides which tools it needs (geocoding, weather data, statistics, visualization)
+3. **Tool Execution**: The agent executes the requested tools
+4. **Result Analysis**: Claude receives the tool results and decides what to do next
+5. **Iteration**: Steps 2-4 repeat until Claude has enough information
+6. **Final Answer**: Claude provides a comprehensive response
+
+### Available Tools
+
+The agent has access to these tools:
+
+1. **geocode_location**: Convert location names to coordinates
+2. **fetch_weather_forecast**: Get hourly weather data (for detailed analysis)
+3. **fetch_daily_weather_forecast**: Get daily summaries (more efficient for multi-day forecasts)
+4. **get_available_models**: List supported weather models
+5. **calculate_ensemble_statistics**: Compute mean, spread, percentiles across models
+6. **calculate_model_agreement**: Measure how well models agree
+7. **summarize_forecast_uncertainty**: Overall uncertainty assessment
+8. **calculate_daily_temperature_range_statistics**: Temperature max/min analysis
+9. **create_ensemble_uncertainty_plot**: Generate visualization
+
+### Weather Models
+
+| Model | Name | Provider | Resolution | Update Frequency |
+|-------|------|----------|------------|------------------|
+| **gfs** | Global Forecast System | NOAA (USA) | 0.25° (~28 km) | 4x daily |
+| **ecmwf** | European Centre for Medium-Range Weather Forecasts | ECMWF (EU) | High accuracy | 2x daily |
+| **gem** | Global Environmental Multiscale | Environment Canada | 0.25° (~25 km) | 2x daily |
+| **icon** | Icosahedral Nonhydrostatic | DWD (Germany) | 0.1° (~11 km) | 4x daily |
+
+## Examples
+
+### Example Output
+
+```bash
+$ weather-agent forecast "Denver, CO" --days 3
+
+============================================================
+USER: Get a 3-day daily weather forecast for Denver, CO.
+Create a visualization saved to outputs/forecast.png.
+Provide a clear summary of the forecast.
+============================================================
+
+--- Iteration 1 ---
+Stop reason: tool_use
+
+Tool call: geocode_location
+Input keys: ['location']
+Result: {'latitude': 39.7392, 'longitude': -104.9903, ...}
+
+--- Iteration 2 ---
+Stop reason: tool_use
+
+Tool call: fetch_daily_weather_forecast
+Input keys: ['latitude', 'longitude', 'days', 'models']
+Result: [Large dataset - 4523 chars]
+
+--- Iteration 3 ---
+...
+
+AGENT: Based on the 3-day forecast for Denver, Colorado, here's what to expect:
+
+**Temperature**:
+- Highs ranging from 45-55°F
+- Lows around 32-38°F
+- Models show good agreement (low uncertainty)
+
+**Precipitation**:
+- Minimal precipitation expected
+- Less than 0.1" across all models
+- High confidence in dry conditions
+
+**Wind**:
+- Moderate winds 8-12 mph
+- Slightly higher on Day 2 (up to 15 mph)
+
+**Forecast Confidence**: HIGH - All four models (GFS, ECMWF, GEM, ICON)
+show strong agreement, suggesting this is a reliable forecast.
+
+The visualization has been saved to outputs/forecast.png showing the
+ensemble spread and individual model predictions.
+
+✓ Complete!
+
+📊 Visualization saved to: outputs/forecast.png
+```
+
+### Example Visualization
+
+The generated plots show:
+- **Temperature Max/Min**: Daily high and low temperatures with ensemble mean
+- **Precipitation**: Daily total precipitation across models
+- **Wind Speed Max**: Maximum wind speeds per day
+- **Model Traces**: Individual model predictions (semi-transparent)
+- **Ensemble Mean**: Bold black line showing the consensus forecast
+
+## Development
+
+### Setting Up Development Environment
+
+```bash
+# Clone and install with dev dependencies
+git clone <repository-url>
+cd weather-ensemble-agent
+uv sync
+
+# Install pre-commit hooks
+pre-commit install
+
+# Run tests
+pytest
+
+# Run the agent in development mode
+python -m weather_agent.agent
+```
+
+### Code Style
+
+- **Formatter**: ruff
+- **Linter**: ruff (E, F, I rules)
+- **Line length**: 100 characters
+- **Python version**: 3.12+
+
+### Adding New Tools
+
+To add a new tool for the agent:
+
+1. Create the function in `src/weather_agent/tools/`
+2. Add the tool definition in `agent.py` → `_define_tools()`
+3. Add the execution handler in `agent.py` → `_execute_tool()`
+4. Update the system prompt if needed
+
+Example:
+```python
+# In _define_tools()
+{
+    "name": "my_new_tool",
+    "description": "What this tool does and when to use it",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "param": {"type": "string", "description": "Parameter description"}
+        },
+        "required": ["param"]
+    }
+}
+
+# In _execute_tool()
+elif tool_name == "my_new_tool":
+    return my_new_tool(**tool_input)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**API Key Error**
+```
+Error: ANTHROPIC_API_KEY not set
+```
+Solution: Make sure you've created a `.env` file with your API key.
+
+**Module Not Found**
+```
+ModuleNotFoundError: No module named 'weather_agent'
+```
+Solution: Install in editable mode: `pip install -e .` or `uv sync`
+
+**Geocoding Fails**
+```
+Error: Could not geocode location
+```
+Solution: Try being more specific with the location (e.g., "Denver, CO" instead of "Denver")
+
+**No Models Available**
+```
+Error: No valid model data available
+```
+Solution: Check your internet connection. The Open-Meteo API may be temporarily unavailable.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+### Guidelines
+- Follow the existing code style (ruff format)
+- Add tests for new features
+- Update documentation as needed
+- Ensure pre-commit hooks pass
+
+### Ideas for Learning Extensions
+
+If you're using this as a learning project, here are some ideas to extend it:
+
+**Beginner:**
+- Add a new tool (e.g., sunrise/sunset times, moon phase)
+- Modify the system prompt to change agent behavior
+- Add support for additional weather variables (humidity, UV index)
+- Create a new CLI command
+
+**Intermediate:**
+- Implement caching to reduce API calls
+- Add historical weather data comparison
+- Create alternative visualization styles
+- Build a web interface with Flask or FastAPI
+- Add support for different LLM providers (OpenAI, local models)
+
+**Advanced:**
+- Implement multi-agent collaboration (multiple agents working together)
+- Add memory/conversation history for multi-turn interactions
+- Create a feedback loop for agent self-improvement
+- Build a RAG (Retrieval-Augmented Generation) system with weather documentation
+- Implement streaming responses for real-time feedback
+
+## Learning Resources
+
+### Understanding AI Agents
+
+- **Anthropic's Tool Use Documentation**: [docs.anthropic.com](https://docs.anthropic.com/claude/docs/tool-use)
+- **LangChain Agents Guide**: Learn about alternative agent frameworks
+- **OpenAI Function Calling**: Compare different approaches to tool calling
+
+### Key Concepts Demonstrated in This Project
+
+1. **Agentic Loop Pattern** (`src/weather_agent/agent.py:run()`)
+   - Request → Reasoning → Tool Use → Evaluation → Repeat
+   - Study lines ~400-500 to see the implementation
+
+2. **Tool Schema Design** (`src/weather_agent/agent.py:_define_tools()`)
+   - How to describe tools to an LLM
+   - JSON Schema for parameter validation
+   - Descriptive prompts for better tool selection
+
+3. **Tool Execution** (`src/weather_agent/agent.py:_execute_tool()`)
+   - Dispatching tool calls to Python functions
+   - Error handling and graceful degradation
+   - Returning results back to the agent
+
+4. **System Prompts** (`src/weather_agent/agent.py:run()`)
+   - Guiding agent behavior with instructions
+   - Context injection (current date)
+   - Best practices for tool usage
+
+### Experiment Ideas
+
+Try modifying the code to understand how it works:
+
+1. **Change the model**: Switch from `claude-sonnet-4` to `claude-opus-4` and observe differences
+2. **Limit iterations**: Reduce `max_iterations` to see how the agent handles constraints
+3. **Remove a tool**: Comment out a tool and see how the agent adapts
+4. **Add verbose logging**: Print more details about agent reasoning
+5. **Test edge cases**: Ask questions the agent can't answer and see how it responds
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- **Open-Meteo**: Free weather API with multiple model support
+- **Anthropic**: Claude AI for agentic reasoning
+- **OpenStreetMap**: Nominatim geocoding service
+
+## Citation
+
+If you use this project in your research or application, please cite:
+
+```bibtex
+@software{weather_ensemble_agent,
+  title = {Weather Ensemble Agent},
+  author = {Your Name},
+  year = {2026},
+  url = {https://github.com/yourusername/weather-ensemble-agent}
+}
+```
+
+## Contact
+
+For questions or feedback, please open an issue on GitHub.
+
+---
+
+**Happy forecasting! 🌦️**
