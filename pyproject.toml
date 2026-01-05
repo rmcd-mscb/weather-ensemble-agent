@@ -48,9 +48,11 @@ Homepage = "https://github.com/rmcd-mscb/weather-ensemble-agent"
 Repository = "https://github.com/rmcd-mscb/weather-ensemble-agent"
 Issues = "https://github.com/rmcd-mscb/weather-ensemble-agent/issues"
 Documentation = "https://github.com/rmcd-mscb/weather-ensemble-agent#readme"
+Changelog = "https://github.com/rmcd-mscb/weather-ensemble-agent/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
+    "hatch>=1.16.2",
     "ipython>=9.9.0",
     "pre-commit>=4.0.1",
     "pytest>=9.0.2",
@@ -64,8 +66,20 @@ weather-agent = "weather_agent.cli:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "src/weather_agent/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/weather_agent"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
 
 [tool.ruff]
 line-length = 100
